@@ -35,60 +35,24 @@ Vector2f lerp(float i, Ref<const Vector2f> a, Ref<const Vector2f> b) {
 }
 
 Vector2f biLinIntrp(Vectors& vecs, Ref<const Vector2f> p) {
-	size_t x = (int)p[0];
-	size_t y = (int)p[1];
+	size_t x = (size_t)p[0];
+	size_t y = (size_t)p[1];
+	size_t x1 = x + 1;
+	size_t y1 = y + 1;
 
-	if (x < 0 or x >= IM_X or y < 0 or y >= IM_Y)
-		return Vector2f::Zero();
-
-	if (x + 1 < IM_X)
-		if (y + 1 < IM_Y)
-			return lerp(
-				p[1] - y,
-				lerp(
-					p[0] - x,
-					vecs.block<2, 1>(0, y * IM_X + x),
-					vecs.block<2, 1>(0, y * IM_X + x + 1)
-				), lerp(
-					p[0] - x,
-					vecs.block<2, 1>(0, (y + 1) * IM_X + x),
-					vecs.block<2, 1>(0, (y + 1) * IM_X + x + 1)
-				)
-			);
-		else
-			return lerp(
-				p[1] - y,
-				lerp(
-					p[0] - x,
-					vecs.block<2, 1>(0, y * IM_X + x),
-					vecs.block<2, 1>(0, y * IM_X + x + 1)
-				),
-				Vector2f::Zero()
-			);
-	else if (y + 1 < IM_Y)
-		return lerp(
-			p[1] - y,
-			lerp(
-				p[0] - x,
-				vecs.block<2, 1>(0, y * IM_X + x),
-				Vector2f::Zero()
-			), lerp(
-				p[0] - x,
-				vecs.block<2, 1>(0, (y + 1) * IM_X + x),
-				Vector2f::Zero()
-			)
-		);
-	else
-		return lerp(
-			p[1] - y,
-			lerp(
-				p[0] - x,
-				vecs.block<2, 1>(0, y * IM_X + x),
-				Vector2f::Zero()
-			),
-			Vector2f::Zero()
-		);
-
+	bool up = y >= 0;
+	bool dn = y1 < IM_Y;
+	bool lf = x >= 0;
+	bool rt = x1 < IM_X;
+	auto a = (lf and up) ? vecs.block<2, 1>(0, y  * IM_X + x ).eval() : Vector2f::Zero();
+	auto b = (rt and up) ? vecs.block<2, 1>(0, y  * IM_X + x1).eval() : Vector2f::Zero();
+	auto c = (lf and dn) ? vecs.block<2, 1>(0, y1 * IM_X + x ).eval() : Vector2f::Zero();
+	auto d = (rt and dn) ? vecs.block<2, 1>(0, y1 * IM_X + x1).eval() : Vector2f::Zero();
+	
+	float delta = p[0] - x;
+	a = lerp(delta, a, b);
+	b = lerp(delta, c, d);
+	return lerp(p[1] - y, a, b);
 }
 
 void integrate(Lines& out, Vectors& vecs) {

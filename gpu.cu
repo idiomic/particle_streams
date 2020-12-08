@@ -136,12 +136,14 @@ int main(int argc, char **argv) {
 	checkLinux(read(fd, im, IM_SIZE));
 	close(fd);
 
+    // Modified basic cuda texture manipulation obtained from
+    // https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html
+
 	// Allocate CUDA array in device memory
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0,
         cudaChannelFormatKindFloat);
     checkCuda(cudaMallocArray(&im_d, &channelDesc, IM_X, IM_Y));
     checkCuda(cudaMemcpyToArray(im_d, 0, 0, im, IM_SIZE, cudaMemcpyHostToDevice));
-
     // Specify texture
     struct cudaResourceDesc resDesc;
     memset(&resDesc, 0, sizeof(resDesc));
