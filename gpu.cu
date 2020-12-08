@@ -26,16 +26,16 @@ constexpr size_t YSR = 5;
 
 __device__
 inline float2 mul(float s, float2 v) {
-	v.x *= s;
-	v.y *= s;
-	return v;
+    v.x *= s;
+    v.y *= s;
+    return v;
 }
 
 __device__
 inline float2 add(float2 v1, float2 v2) {
-	v1.x += v2.x;
-	v1.y += v2.y;
-	return v1;
+    v1.x += v2.x;
+    v1.y += v2.y;
+    return v1;
 }
 
 __global__
@@ -73,43 +73,43 @@ void integrate(float2* out, cudaTextureObject_t vecs, float dt, size_t steps) {
 
 __host__
 cudaError_t checkCuda(cudaError_t result) {
-	if (result != cudaSuccess) {
-		cerr << "CUDA Runtime Error: " << cudaGetErrorString(result) << endl;
-		abort();
-	}
-	return result;
+    if (result != cudaSuccess) {
+        cerr << "CUDA Runtime Error: " << cudaGetErrorString(result) << endl;
+        abort();
+    }
+    return result;
 }
 
 __host__
 int checkLinux(int result) {
-	if (result == -1) {
-		cerr << "Linux Runtime Error: (" << errno << ") " << strerror(errno) << endl;
-		abort();
-	}
-	return result;
+    if (result == -1) {
+        cerr << "Linux Runtime Error: (" << errno << ") " << strerror(errno) << endl;
+        abort();
+    }
+    return result;
 }
 
 __host__
 void writeCSV(char* file, float2* output, size_t num_particles, size_t steps) {
-	const size_t file_size = num_particles * steps * (20 + 9 + 9 + 3);
-	umask(0111);
-	int fd = checkLinux(open(file, O_RDWR | O_CREAT | O_TRUNC, 06666));
-	checkLinux(ftruncate(fd, file_size));
-	char* map = (char*) mmap(NULL, file_size, PROT_WRITE, MAP_SHARED, fd, 0);
-	checkLinux((int)(size_t)map);
-	char* cur = map;
+    const size_t file_size = num_particles * steps * (20 + 9 + 9 + 3);
+    umask(0111);
+    int fd = checkLinux(open(file, O_RDWR | O_CREAT | O_TRUNC, 06666));
+    checkLinux(ftruncate(fd, file_size));
+    char* map = (char*) mmap(NULL, file_size, PROT_WRITE, MAP_SHARED, fd, 0);
+    checkLinux((int)(size_t)map);
+    char* cur = map;
 
-	const char* header = "line_id, coordinate_x, coordinate_y\n";
-	checkLinux(write(fd, header, strlen(header)));
-	for (size_t i = 0; i < num_particles; i++)
-		for (size_t s = 0; s < steps; s++) {
-			float2 p = output[i * steps + s];
-			cur += sprintf(cur, "%llu,%.7f,%.7f\n", i, p.x, p.y);
-		}
-	msync(map, file_size, MS_SYNC);
-	munmap(map, file_size);
-	checkLinux(ftruncate(fd, cur - map));
-	checkLinux(close(fd));
+    const char* header = "line_id, coordinate_x, coordinate_y\n";
+    checkLinux(write(fd, header, strlen(header)));
+    for (size_t i = 0; i < num_particles; i++)
+        for (size_t s = 0; s < steps; s++) {
+            float2 p = output[i * steps + s];
+            cur += sprintf(cur, "%llu,%.7f,%.7f\n", i, p.x, p.y);
+        }
+    msync(map, file_size, MS_SYNC);
+    munmap(map, file_size);
+    checkLinux(ftruncate(fd, cur - map));
+    checkLinux(close(fd));
 }
 
 vector<const char*> names;
@@ -120,23 +120,23 @@ size_t cur_level = 0;
 
 __host__
 static inline void stime(const char* name) {
-	timespec cur_wall, cur_proc;
-	clock_gettime(CLOCK_REALTIME, &cur_wall);
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cur_proc);
-	names.push_back(name);
-	levels.push_back(cur_level++);
-	wall.push_back(cur_wall);
-	proc.push_back(cur_proc);
+    timespec cur_wall, cur_proc;
+    clock_gettime(CLOCK_REALTIME, &cur_wall);
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cur_proc);
+    names.push_back(name);
+    levels.push_back(cur_level++);
+    wall.push_back(cur_wall);
+    proc.push_back(cur_proc);
 }
 
 __host__
 static inline void ftime() {
-	timespec cur_wall, cur_proc;
-	clock_gettime(CLOCK_REALTIME, &cur_wall);
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cur_proc);
-	levels.push_back(--cur_level);
-	wall.push_back(cur_wall);
-	proc.push_back(cur_proc);
+    timespec cur_wall, cur_proc;
+    clock_gettime(CLOCK_REALTIME, &cur_wall);
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cur_proc);
+    levels.push_back(--cur_level);
+    wall.push_back(cur_wall);
+    proc.push_back(cur_proc);
 }
 
 // from https://gist.github.com/diabloneo/9619917
@@ -152,75 +152,77 @@ static inline void timespecDiff(timespec& a, timespec& b, timespec& result) {
 
 __host__
 static inline double timespecToMs(const timespec& t) {
-	return (double)t.tv_sec * 1000.0 + (double)t.tv_nsec / 1000000.0;
+    return (double)t.tv_sec * 1000.0 + (double)t.tv_nsec / 1000000.0;
 }
 
 __host__
 static size_t ptime(const char* name, size_t n = 0, size_t i = 0, size_t l = 0) {
-	while (n < names.size() and levels[i] == l) {
-		size_t j = i + 1;
-		auto& sw = wall[i];
-		auto& sp = proc[i];
-		int jumped = j;
-		while (l < levels[j]) j++;
-		auto& fw = wall[j];
-		auto& fp = proc[j];
-		timespec w, p;
-		timespecDiff(fw, sw, w);
-		timespecDiff(fp, sp, p);
-		for (size_t k = 0; k < l; k++)
-			printf("\t");
-		printf("%s %s: Wall %.3fms; Proc %.3fms\n",
-			name,
-			names[n++],
-			timespecToMs(w),
-			timespecToMs(p));
-		if (jumped < j)
-			n = ptime(name, n, jumped, l + 1);
-		i = j + 1;
-	}
-	return n;
+    while (n < names.size() and levels[i] == l) {
+        size_t j = i + 1;
+        auto& sw = wall[i];
+        auto& sp = proc[i];
+        int jumped = j;
+        while (l < levels[j]) j++;
+        auto& fw = wall[j];
+        auto& fp = proc[j];
+        timespec w, p;
+        timespecDiff(fw, sw, w);
+        timespecDiff(fp, sp, p);
+        for (size_t k = 0; k < l; k++)
+            printf("\t");
+        printf("%s %s: Wall %.3fms; Proc %.3fms\n",
+            name,
+            names[n++],
+            timespecToMs(w),
+            timespecToMs(p));
+        if (jumped < j)
+            n = ptime(name, n, jumped, l + 1);
+        i = j + 1;
+    }
+    return n;
 }
 
 __host__
 int main(int argc, char **argv) {
-	stime("Program");
-	stime("Setup");
-	if (argc != 3) {
-		ftime();
-		ftime();
-		printf("Usage: ./main image output\n");
-		return 0;
-	}
+    stime("Program");
+    stime("Setup");
+    if (argc != 3) {
+        ftime();
+        ftime();
+        printf("Usage: ./main image output\n");
+        return 0;
+    }
 
-	float dt = 1;
-	//cout << "Enter delta time: ";
-	//cin >> dt;
+    float dt = 1;
+    //cout << "Enter delta time: ";
+    //cin >> dt;
 
-	size_t steps = 100;
-	//cout << "Enter number of steps: ";
-	//cin >> steps;
+    size_t steps = 100;
+    //cout << "Enter number of steps: ";
+    //cin >> steps;
 
-	// Opening file
-	stime("Read input");
-	int fd = checkLinux(open(argv[1], O_RDONLY));
+    // Opening file
+    stime("Read input");
+    int fd = checkLinux(open(argv[1], O_RDONLY));
 
-	// Allocating + Mapping host memory
-	float2 *im;
+    // Allocating + Mapping host memory
+    float2 *im;
     cudaArray* im_d;
     float2 *output_d;
     float2 *output;
 
-	checkCuda(cudaMallocHost(&im, IM_SIZE));
-	checkLinux(read(fd, im, IM_SIZE));
-	close(fd);
-	ftime();
+    // Memory mapping does not provide a performance boost.
+    // It trades off between copy time to GPU or copy to RAM.
+    checkCuda(cudaMallocHost(&im, IM_SIZE));
+    checkLinux(read(fd, im, IM_SIZE));
+    close(fd);
+    ftime();
 
     // Modified basic cuda texture manipulation obtained from
     // https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html
 
-	// Allocate CUDA array in device memory
-	stime("Copy to GPU");
+    // Allocate CUDA array in device memory
+    stime("Copy to GPU");
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0,
         cudaChannelFormatKindFloat);
     checkCuda(cudaMallocArray(&im_d, &channelDesc, IM_X, IM_Y));
@@ -241,7 +243,7 @@ int main(int argc, char **argv) {
     texDesc.addressMode[1]   = cudaAddressModeBorder;
     texDesc.filterMode       = cudaFilterModeLinear;
     texDesc.readMode         = cudaReadModeElementType;
-    texDesc.maxAnisotropy	 = 2;
+    texDesc.maxAnisotropy    = 2;
     texDesc.normalizedCoords = false;
 
     // Create texture object
@@ -249,30 +251,30 @@ int main(int argc, char **argv) {
     checkCuda(cudaCreateTextureObject(&imTex, &resDesc, &texDesc, NULL));
     ftime();
 
-	dim3 block(26, 24, 1);
-	dim3 grid(5, 5, 1);
-	// dim3 block(1, 24, 1);
-	// dim3 grid(1, 25, 1);
-	const size_t num_particles = block.x * grid.x * block.y * grid.y;
-	const size_t out_size = num_particles * sizeof(float2) * steps;
+    dim3 block(26, 24, 1);
+    dim3 grid(5, 5, 1);
+    // dim3 block(1, 24, 1);
+    // dim3 grid(1, 25, 1);
+    const size_t num_particles = block.x * grid.x * block.y * grid.y;
+    const size_t out_size = num_particles * sizeof(float2) * steps;
 
-	stime("Allocate Output");
+    stime("Allocate Output");
     checkCuda(cudaMalloc(&output_d, out_size));
     ftime();
 
     ftime();
 
-   	stime("Computation");
+    stime("Computation");
     integrate<<<grid, block>>>(output_d, imTex, dt, steps);
     ftime();
 
-	// Copying from device to host
-	stime("Copy to host");
-	checkCuda(cudaMallocHost(&output, out_size));
-	checkCuda(cudaMemcpy(output, output_d, out_size, cudaMemcpyDeviceToHost));
-	ftime();
+    // Copying from device to host
+    stime("Copy to host");
+    checkCuda(cudaMallocHost(&output, out_size));
+    checkCuda(cudaMemcpy(output, output_d, out_size, cudaMemcpyDeviceToHost));
+    ftime();
 
-	stime("Free device memory");
+    stime("Free device memory");
     checkCuda(cudaFree(output_d));
     checkCuda(cudaDestroyTextureObject(imTex));
     checkCuda(cudaFreeArray(im_d));
@@ -283,7 +285,7 @@ int main(int argc, char **argv) {
     //ftime();
 
     stime("Free host memory");
-	checkCuda(cudaFreeHost(im));
+    checkCuda(cudaFreeHost(im));
     checkCuda(cudaFreeHost(output));
     ftime();
 
