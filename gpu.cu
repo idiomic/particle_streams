@@ -170,7 +170,7 @@ static size_t ptime(const char* name, size_t n = 0, size_t i = 0, size_t l = 0) 
         timespecDiff(fp, sp, p);
         for (size_t k = 0; k < l; k++)
             printf("\t");
-        printf("%s %s: Wall %.3fms; Proc %.3fms\n",
+        printf("\"%s\", \"%s\", %.3f, %.3f\n",
             name,
             names[n++],
             timespecToMs(w),

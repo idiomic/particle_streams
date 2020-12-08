@@ -186,7 +186,7 @@ static size_t ptime(const char* name, size_t n = 0, size_t i = 0, size_t l = 0) 
         timespecDiff(fp, sp, p);
         for (size_t k = 0; k < l; k++)
             printf("\t");
-        printf("%s %s: Wall %.3fms; Proc %.3fms\n",
+        printf("\"%s\", \"%s\", %.3f, %.3f\n",
             name,
             names[n++],
             timespecToMs(w),
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
 
     // Read input vector field
     stime("Read input");
-    float *im = nullptr;
+    float *im = (float*)malloc(IM_SIZE);;
     if (rank == 0) {
         int fd = checkLinux(open(argv[1], O_RDONLY));
         // Memory mapping does not work in UofU's CHPC with MPICH 3.3 MPI.
@@ -226,8 +226,6 @@ int main(int argc, char **argv) {
         checkLinux(read(fd, im, IM_SIZE));
         checkLinux((int)(size_t)im);
         close(fd);
-    } else {
-        im = (float*)malloc(IM_SIZE);
     }
     ftime();
 
