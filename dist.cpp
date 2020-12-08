@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 	float *im = nullptr;
 	if (rank == 0) {
 		int fd = checkLinux(open(argv[1], O_RDONLY));
-		im = (float*)mmap(NULL, IM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
+		im = (float*)mmap(NULL, IM_SIZE, PROT_READ, MAP_PRIVATE | MAP_LOCKED | MAP_POPULATE, fd, 0);
 		checkLinux((int)(size_t)im);
 		close(fd);
 	} else {
@@ -244,11 +244,10 @@ int main(int argc, char **argv) {
 	Lines out(output, 2, STEPS * n);
 
 	ftime();
-	stime("Computation");
 
 	// Perform integration
+	stime("Computation");
     integrate(out, vecs, rank, n);
-
     ftime();
 
     stime("Gather");
@@ -266,19 +265,25 @@ int main(int argc, char **argv) {
 
   	// Write output on root
   	if (rank == 0) {
-  		stime("Write");
+  		//stime("Write");
 		AllLines out(full_output);
+	    //writeCSV(argv[2], out, n * size);
+	    //ftime();
+  		stime("Free memory");
 	    munmap(im, IM_SIZE);
-	    writeCSV(argv[2], out, n * size);
 	    free(full_output);
-	    ftime();
-	} else
+	} else {
+  		stime("Free memory");
 		free(im);
+	}
+	ftime();
 
 	stime("Finalize");
 	MPI_Finalize();
 	ftime();
+
 	ftime();
+
 	char name[256];
 	snprintf(name, 256, "Rank %d", rank);
 	ptime(name);
